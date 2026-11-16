@@ -1,7 +1,8 @@
 {
-  "name": "ប្រព័ន្ធវាយតម្លៃអំណានសិស្ស",
+  "id": "student-reading-evaluation-pwa",
+  "name": "ប្រព័ន្ធវាយតម្លៃអំណានសិស្ស | Student Reading Evaluation",
   "short_name": "វាយតម្លៃអំណាន",
-  "description": "ប្រព័ន្ធវាយតម្លៃអំណាន និងតាមដានការអានរបស់សិស្ស វិទ្យាល័យ ព្រះអង្គឌួង",
+  "description": "ប្រព័ន្ធវាយតម្លៃអំណានសិស្ស វិទ្យាល័យ ព្រះអង្គឌួង",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -10,13 +11,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "https://drive.google.com/thumbnail?id=1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN&sz=w192",
+      "src": "https://lh3.googleusercontent.com/d/1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://drive.google.com/thumbnail?id=1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN&sz=w512",
+      "src": "https://lh3.googleusercontent.com/d/1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
