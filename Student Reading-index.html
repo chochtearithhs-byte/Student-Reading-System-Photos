@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ប្រព័ន្ធវាយតម្លៃអំណានសិស្ស | Student Reading Evaluation System</title>
+    
+    <!-- PWA Meta & Manifest -->
     <meta name="theme-color" content="#1B4D3E">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="វាយតម្លៃអំណាន">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN">
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1mGVFFMVNkaM7cyndEQctonpTa6gOvFaN">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -75,6 +84,12 @@
         <div class="orbit-ring w-[680px] h-[440px] rotate-[-12deg]"></div>
 
         <div class="fixed top-4 right-4 z-30 flex items-center gap-2">
+            <!-- ប៊ូតុងដំឡើង App (បង្ហាញស្វ័យប្រវត្តិពេល Browser គាំទ្រ PWA) -->
+            <button type="button" id="installAppBtnLogin" onclick="triggerInstallPWA()" class="hidden items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm shadow-lg transition cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>ដំឡើង App</span>
+            </button>
+
             <div class="flex items-center gap-1.5 bg-white/10 text-white border border-white/20 px-3 py-1.5 rounded-xl text-xs sm:text-sm backdrop-blur-md">
                 <i data-lucide="book-open-check" class="w-4 h-4 text-emerald-400"></i>
                 <span>Reading Cloud DB</span>
@@ -191,6 +206,11 @@
             </div>
 
             <div class="flex items-center gap-2 sm:gap-3">
+                <button type="button" id="installAppBtnDash" onclick="triggerInstallPWA()" class="hidden items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1.5 rounded-full text-xs shadow transition cursor-pointer">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">ដំឡើង App</span>
+                </button>
+
                 <button onclick="syncWithGoogleCloud(true)" class="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full text-xs font-medium transition">
                     <i id="syncIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">Google Sheet Sync</span>
@@ -677,7 +697,48 @@
 
     <!-- ==================== JAVASCRIPT LOGIC ==================== -->
     <script>
-        // ជំនួស URL ខាងក្រោមដោយ URL របស់ Web App ថ្មីរបស់អ្នកក្រោយ Deploy រួច
+        // ==================== PWA SERVICE WORKER & INSTALL PROMPT ====================
+        let deferredInstallPrompt = null;
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered:', reg.scope))
+                    .catch(err => console.warn('Service Worker Registration Failed:', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btnLogin = document.getElementById('installAppBtnLogin');
+            const btnDash = document.getElementById('installAppBtnDash');
+            if (btnLogin) { btnLogin.classList.remove('hidden'); btnLogin.classList.add('flex'); }
+            if (btnDash) { btnDash.classList.remove('hidden'); btnDash.classList.add('flex'); }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const btnLogin = document.getElementById('installAppBtnLogin');
+            const btnDash = document.getElementById('installAppBtnDash');
+            if (btnLogin) btnLogin.classList.add('hidden');
+            if (btnDash) btnDash.classList.add('hidden');
+            showToast('បានដំឡើងកម្មវិធីលើឧបករណ៍ជោគជ័យ!', 'success');
+        });
+
+        async function triggerInstallPWA() {
+            if (!deferredInstallPrompt) {
+                showToast('សូមចុចលើម៉ឺនុយ Browser រួចជ្រើសរើស "Add to Home Screen" ឬ "Install App"', 'info');
+                return;
+            }
+            deferredInstallPrompt.prompt();
+            const { outcome } = await deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') {
+                deferredInstallPrompt = null;
+            }
+        }
+
+        // ==================== CORE APP CONFIGURATION ====================
         const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbx4XyMG5AN0kAQRpwFY88HRtRH9RslO1a91x9wORcZKDftTSyb1nCNTV4qYb3Zc3USO/exec';
         const STORAGE_KEY_USERS = 'moeys_reading_users_v2';
         const STORAGE_KEY_SESSION = 'moeys_reading_session_v2';
@@ -688,7 +749,6 @@
         let currentPortfolioTab = 'all';
         let categoryChartInstance = null;
 
-        // អនុគមន៍ស្នូលសម្រាប់បញ្ជូនទិន្នន័យទៅ Google Apps Script ដោយជៀសវាង CORS Error
         async function postToGAS(payload) {
             const response = await fetch(DEFAULT_GAS_URL, {
                 method: 'POST',
@@ -806,7 +866,6 @@
             localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
         }
 
-        // ==================== បង្រួម និងផ្ទុករូបភាពចូល Google Drive Folder ====================
         function processImageFile(file, callback) {
             if (!file || !file.type.startsWith('image/')) {
                 showToast('សូមជ្រើសរើសឯកសាររូបភាព (JPG/PNG)!', 'error');
@@ -839,7 +898,6 @@
             reader.readAsDataURL(file);
         }
 
-        // ផ្លាស់ប្តូររូបភាពសិស្ស (Banner)
         function handleProfilePhotoUpload(event) {
             const file = event.target.files[0];
             if (!file || !activeProfileUser) return;
@@ -875,7 +933,6 @@
             });
         }
 
-        // ផ្លាស់ប្តូររូបភាពគណនីផ្ទាល់ខ្លួនរបស់គ្រូ/អ្នកប្រើប្រាស់ (Navbar)
         function handleAccountPhotoUpload(event) {
             const file = event.target.files[0];
             if (!file || !loggedInAccount) return;
@@ -1517,7 +1574,6 @@
                         teacherStudentsList.forEach(st => upsertLocalUser(st));
                         renderTeacherStudentDropdown(teacherStudentsList);
 
-                        // ធ្វើបច្ចុប្បន្នភាពទិន្នន័យសិស្សដែលកំពុងជ្រើសរើស
                         const updatedTarget = teacherStudentsList.find(s => String(s.studentId) === String(activeProfileUser.studentId));
                         if (updatedTarget) {
                             activeProfileUser = updatedTarget;
